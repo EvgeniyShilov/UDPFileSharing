@@ -5,7 +5,6 @@ import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -16,7 +15,7 @@ public class Receiver extends Transmitter {
 
     private String currentFilename;
     private Long currentFileSize;
-    private ArrayList<EnumeratedPacket> packets;
+    private List<EnumeratedPacket> packets;
 
     private void listen() {
         while (true) {
@@ -24,7 +23,7 @@ public class Receiver extends Transmitter {
                 EnumeratedPacket packet = receive();
                 long code = packet.getNumber();
                 if (code == Constants.CODE_COMMON_MESSAGE) {
-                    onCommonMessage(packet);
+                    onStartUploading(packet);
                 } else if (code == Constants.CODE_IMPORTANT_MESSAGE) {
                     onEOFMessage(packet);
                 } else {
@@ -36,7 +35,7 @@ public class Receiver extends Transmitter {
         }
     }
 
-    private void onCommonMessage(EnumeratedPacket packet) throws IOException {
+    private void onStartUploading(EnumeratedPacket packet) throws IOException {
         String fileParams = packet.getDataAsString();
         int delimiterIndex = fileParams.indexOf(" ");
         String filename = "server " + fileParams.toLowerCase().substring(0, delimiterIndex).trim();
@@ -68,27 +67,25 @@ public class Receiver extends Transmitter {
         long totalPacketCount = currentFileSize / Constants.BUFFER_SIZE;
         if (currentFileSize % Constants.BUFFER_SIZE != 0) totalPacketCount++;
         List<Long> numbers = new ArrayList<>();
-        for (long i = 0; i < totalPacketCount; i++) {
-            if (!packetIsUploaded(i)) numbers.add(i);
-        }
+        for (long i = 0; i < totalPacketCount; i++) if (!packetIsUploaded(i)) numbers.add(i);
         if (!numbers.isEmpty()) {
             send(numbers);
         } else {
             send(Constants.CODE_IMPORTANT_MESSAGE, "File was uploaded");
-            //TODO: create file from packets
+            createFile();
         }
     }
 
     private void createFile() throws IOException {
         AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(
                 Paths.get(currentFilename), StandardOpenOption.WRITE);
-        Collections.sort(packets);
-        for(EnumeratedPacket packet : packets) {
+        Collections.sort(packets, (o1, o2) -> (int)(o1.getNumber() - o2.getNumber()));
+        for (EnumeratedPacket packet : packets)
             fileChannel.write(ByteBuffer.wrap(packet.getData()), packet.getNumber() * Constants.BUFFER_SIZE);
-        }
         fileChannel.close();
         currentFileSize = null;
         currentFilename = null;
+        packets = null;
     }
 
     private boolean packetIsUploaded(long packetNumber) {

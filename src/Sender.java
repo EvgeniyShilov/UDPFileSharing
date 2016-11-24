@@ -1,4 +1,5 @@
 import java.io.*;
+import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 
 /**
@@ -13,7 +14,48 @@ public class Sender extends Transmitter {
         user = new BufferedReader(new InputStreamReader(System.in));
     }
 
-    private String readFilename() {
+    public void start() {
+        loop:
+        while (true) {
+            System.out.println("1) Set remote");
+            System.out.println("2) Upload file");
+            System.out.println("3) Quit");
+            String line;
+            try {
+                line = user.readLine();
+                if (line.equals("")) continue;
+            } catch (IOException e) {
+                continue;
+            }
+            switch (line.charAt(0)) {
+                case '1':
+                    try {
+                        System.out.println("IP?");
+                        String ip = user.readLine();
+                        System.out.println("port?");
+                        String portLine = user.readLine();
+                        if (portLine.equals("") || ip.equals("")) return;
+                        InetAddress inetAddress = InetAddress.getByName(ip);
+                        Integer port = Integer.parseInt(portLine);
+                        setRemote(inetAddress, port);
+                    } catch (IOException | NumberFormatException ignored) {
+                    }
+                    break;
+                case '2':
+                    String filename = readLineFromUser();
+                    try {
+                        upload(filename);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case '3':
+                    break loop;
+            }
+        }
+    }
+
+    private String readLineFromUser() {
         try {
             return user.readLine();
         } catch (IOException e) {

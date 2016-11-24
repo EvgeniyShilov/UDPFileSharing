@@ -3,9 +3,6 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
 import java.util.List;
 
 /**
@@ -25,9 +22,10 @@ public class Transmitter {
         }
     }
 
-    protected void setRemote(InetAddress address, int port) {
+    protected Transmitter setRemote(InetAddress address, int port) {
         this.address = address;
         this.port = port;
+        return this;
     }
 
     protected void send(String data) throws IOException {
@@ -48,8 +46,8 @@ public class Transmitter {
     }
 
     protected void send(long number, List<Long> data) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream( );
-        for(Long value : data) outputStream.write(value.byteValue());
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        for (Long value : data) outputStream.write(value.byteValue());
         byte[] numbersBytes = outputStream.toByteArray();
         send(number, numbersBytes, numbersBytes.length);
     }

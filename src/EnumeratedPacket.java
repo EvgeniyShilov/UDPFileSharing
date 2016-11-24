@@ -3,12 +3,11 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.Arrays;
-import java.util.stream.Collector;
 
 /**
  * Created by EvgeniyShilov on 24.11.2016 at 0:38
  */
-public class EnumeratedPacket implements Comparable {
+public class EnumeratedPacket {
 
     private DatagramPacket packet;
 
@@ -63,10 +62,5 @@ public class EnumeratedPacket implements Comparable {
 
     public static EnumeratedPacket getPacketForReceive(int size) {
         return new EnumeratedPacket(size);
-    }
-
-    @Override
-    public int compareTo(Object o) {
-        return (int)(this.getNumber() - ((EnumeratedPacket) o).getNumber());
     }
 }
