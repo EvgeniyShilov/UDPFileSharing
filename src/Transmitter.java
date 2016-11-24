@@ -14,9 +14,9 @@ public class Transmitter {
     protected InetAddress address;
     protected int port;
 
-    protected Transmitter() {
+    protected Transmitter(int port) {
         try {
-            connection = new DatagramSocket();
+            connection = new DatagramSocket(port);
         } catch (SocketException e) {
             e.printStackTrace();
         }

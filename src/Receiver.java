@@ -1,5 +1,8 @@
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.file.Paths;
@@ -13,9 +16,51 @@ import java.util.List;
  */
 public class Receiver extends Transmitter {
 
+    private BufferedReader user;
     private String currentFilename;
     private Long currentFileSize;
     private List<EnumeratedPacket> packets;
+
+    public Receiver() {
+        super(Constants.RECEIVER_PORT);
+        user = new BufferedReader(new InputStreamReader(System.in));
+    }
+
+    public void start() {
+        loop:
+        while (true) {
+            System.out.println("1) Set remote");
+            System.out.println("2) Listen");
+            System.out.println("3) Quit");
+            String line;
+            try {
+                line = user.readLine();
+                if (line.equals("")) continue;
+            } catch (IOException e) {
+                continue;
+            }
+            switch (line.charAt(0)) {
+                case '1':
+                    try {
+                        System.out.println("IP?");
+                        String ip = user.readLine();
+                        System.out.println("port?");
+                        String portLine = user.readLine();
+                        if (portLine.equals("") || ip.equals("")) return;
+                        InetAddress inetAddress = InetAddress.getByName(ip);
+                        Integer port = Integer.parseInt(portLine);
+                        setRemote(inetAddress, port);
+                    } catch (IOException | NumberFormatException ignored) {
+                    }
+                    break;
+                case '2':
+                    listen();
+                    break;
+                case '3':
+                    break loop;
+            }
+        }
+    }
 
     private void listen() {
         while (true) {
@@ -23,8 +68,10 @@ public class Receiver extends Transmitter {
                 EnumeratedPacket packet = receive();
                 long code = packet.getNumber();
                 if (code == Constants.CODE_COMMON_MESSAGE) {
+                    System.out.println(">>> " + packet.getDataAsString());
                     onStartUploading(packet);
                 } else if (code == Constants.CODE_IMPORTANT_MESSAGE) {
+                    System.out.println(">>> " + packet.getDataAsString());
                     onEOFMessage(packet);
                 } else {
                     onPacket(packet);
@@ -39,7 +86,7 @@ public class Receiver extends Transmitter {
         String fileParams = packet.getDataAsString();
         int delimiterIndex = fileParams.indexOf(" ");
         String filename = "server " + fileParams.toLowerCase().substring(0, delimiterIndex).trim();
-        long size = Long.valueOf(filename.substring(delimiterIndex).trim());
+        long size = Long.valueOf(fileParams.substring(delimiterIndex).trim());
         File file = new File(filename);
         if (!file.exists()) {
             currentFilename = filename;

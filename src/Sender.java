@@ -10,7 +10,7 @@ public class Sender extends Transmitter {
     private BufferedReader user;
 
     public Sender() {
-        super();
+        super(Constants.SENDER_PORT);
         user = new BufferedReader(new InputStreamReader(System.in));
     }
 

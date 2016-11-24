@@ -28,6 +28,7 @@ public class Application {
                     break;
                 case 'r':
                     Receiver receiver = new Receiver();
+                    receiver.start();
                     break;
                 case 'q':
                     break loop;
