@@ -1,13 +1,12 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -133,12 +132,14 @@ public class Receiver extends Transmitter {
     private void createFile() throws IOException {
         File file = new File(currentFilename);
         if(!file.exists()) file.createNewFile();
-        AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(
-                Paths.get(currentFilename), StandardOpenOption.WRITE);
+        FileOutputStream fos = new FileOutputStream(file);
+        deleteDuplicatePackets();
         Collections.sort(packets, (o1, o2) -> (int)(o1.getNumber() - o2.getNumber()));
-        for (EnumeratedPacket packet : packets)
-            fileChannel.write(ByteBuffer.wrap(packet.getData()), packet.getNumber() * Constants.BUFFER_SIZE);
-        fileChannel.close();
+        for (EnumeratedPacket packet : packets) {
+            byte[] data = packet.getData();
+            fos.write(data);
+        }
+        fos.close();
         currentFileSize = null;
         currentFilename = null;
         packets = null;
@@ -147,5 +148,13 @@ public class Receiver extends Transmitter {
     private boolean packetIsUploaded(long packetNumber) {
         for (EnumeratedPacket packet : packets) if (packet.getNumber() == packetNumber) return true;
         return false;
+    }
+
+    private void deleteDuplicatePackets() {
+        List<EnumeratedPacket> deletedPackets = new ArrayList<>();
+        for (int i = 0; i < packets.size(); i++)
+            for (int j = i + 1; j < packets.size(); j++)
+                if (packets.get(j).getNumber() == packets.get(i).getNumber()) deletedPackets.add(packets.get(j));
+        packets.removeAll(deletedPackets);
     }
 }
