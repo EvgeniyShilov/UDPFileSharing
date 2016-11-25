@@ -74,6 +74,7 @@ public class Receiver extends Transmitter {
                     System.out.println(">>> " + packet.getDataAsString());
                     onEOFMessage(packet);
                 } else {
+                    System.out.println(">>> packet#" + packet.getNumber());
                     onPacket(packet);
                 }
             } catch (IOException e) {
@@ -97,6 +98,7 @@ public class Receiver extends Transmitter {
             if (currentFilename != null && currentFilename.equals(filename)) {
                 sendMissingPacketsNumbers();
             } else {
+                System.out.println("<<< File exists");
                 send(Constants.CODE_IMPORTANT_MESSAGE, "File exists");
             }
         }
@@ -116,14 +118,23 @@ public class Receiver extends Transmitter {
         List<Long> numbers = new ArrayList<>();
         for (long i = 0; i < totalPacketCount; i++) if (!packetIsUploaded(i)) numbers.add(i);
         if (!numbers.isEmpty()) {
+            System.out.print("<<< Missing packets: ");
+            for(Long number : numbers) {
+                System.out.print(number);
+                if(numbers.indexOf(number) != numbers.size() - 1) System.out.print(", ");
+                else System.out.println(".");
+            }
             send(numbers);
         } else {
+            System.out.println("<<< File was uploaded");
             send(Constants.CODE_IMPORTANT_MESSAGE, "File was uploaded");
             createFile();
         }
     }
 
     private void createFile() throws IOException {
+        File file = new File(currentFilename);
+        if(!file.exists()) file.createNewFile();
         AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(
                 Paths.get(currentFilename), StandardOpenOption.WRITE);
         Collections.sort(packets, (o1, o2) -> (int)(o1.getNumber() - o2.getNumber()));

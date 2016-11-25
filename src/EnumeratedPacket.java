@@ -1,7 +1,9 @@
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
 import java.util.Arrays;
 
 /**
@@ -33,13 +35,15 @@ public class EnumeratedPacket {
     }
 
     public long[] getDataAsLongArray() {
-        LongBuffer longBuffer = ByteBuffer.wrap(getData()).asLongBuffer();
-        long[] longArray = new long[longBuffer.capacity()];
-        longBuffer.get(longArray);
-        for (int i = 0; i < longArray.length; i++) {
-            ByteBuffer valueBytes = ByteBuffer.allocate(Long.BYTES).putLong(longArray[i]);
-            valueBytes.flip();
-            longArray[i] = valueBytes.getLong();
+        byte[] data = getData();
+        DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(data));
+        long[] longArray = new long[data.length / Long.BYTES];
+        for (int i = 0; i < data.length / Long.BYTES; i++) {
+            try {
+                longArray[i] = inputStream.readLong();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return longArray;
     }

@@ -74,6 +74,7 @@ public class Sender extends Transmitter {
         while (true) {
             String fileParams = filename + " " + file.length();
             send(fileParams);
+            System.out.println("<<< " + fileParams);
             try {
                 packet = receive(Constants.LOW_TIMEOUT);
                 break;
@@ -86,16 +87,23 @@ public class Sender extends Transmitter {
                 return;
             }
             long[] packetNumbers = packet.getDataAsLongArray();
+            System.out.print(">>> No packets: ");
+            for(int i = 0; i < packetNumbers.length; i++) {
+                System.out.print(packetNumbers[i]);
+                if(i != packetNumbers.length - 1) System.out.print(", ");
+                else System.out.println(".");
+            }
             RandomAccessFile fileReader = new RandomAccessFile(file, "r");
             for (long packetNumber : packetNumbers) {
                 fileReader.seek(packetNumber * Constants.BUFFER_SIZE);
                 byte[] bytes = new byte[Constants.BUFFER_SIZE];
                 int countBytes = fileReader.read(bytes);
                 send(packetNumber, bytes, countBytes);
-                System.out.println("<<< byte[" + Constants.BUFFER_SIZE + "]");
+                System.out.println("<<< packet#" + packetNumber);
             }
             fileReader.close();
             while (true) {
+                System.out.println("<<< Last packet was sent");
                 send(Constants.CODE_IMPORTANT_MESSAGE, "Last packet was sent");
                 try {
                     packet = receive(Constants.LOW_TIMEOUT);

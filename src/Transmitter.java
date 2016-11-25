@@ -1,4 +1,5 @@
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -46,9 +47,10 @@ public class Transmitter {
     }
 
     protected void send(long number, List<Long> data) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        for (Long value : data) outputStream.write(value.byteValue());
-        byte[] numbersBytes = outputStream.toByteArray();
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        DataOutputStream outputStream = new DataOutputStream(byteStream);
+        for (Long value : data) outputStream.writeLong(value);
+        byte[] numbersBytes = byteStream.toByteArray();
         send(number, numbersBytes, numbersBytes.length);
     }
 
