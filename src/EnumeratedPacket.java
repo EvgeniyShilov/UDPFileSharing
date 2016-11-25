@@ -14,7 +14,7 @@ public class EnumeratedPacket {
     private DatagramPacket packet;
 
     private EnumeratedPacket(int size) {
-        byte[] buffer = new byte[size];
+        byte[] buffer = new byte[size + Long.BYTES];
         packet = new DatagramPacket(buffer, buffer.length);
     }
 

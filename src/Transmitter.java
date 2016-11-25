@@ -51,7 +51,10 @@ public class Transmitter {
         DataOutputStream outputStream = new DataOutputStream(byteStream);
         for (Long value : data) outputStream.writeLong(value);
         byte[] numbersBytes = byteStream.toByteArray();
-        send(number, numbersBytes, numbersBytes.length);
+        int bytesCount = numbersBytes.length > Constants.BUFFER_SIZE
+                ? (Constants.BUFFER_SIZE / Long.BYTES) * Long.BYTES
+                : numbersBytes.length;
+        send(number, numbersBytes, bytesCount);
     }
 
     protected EnumeratedPacket receive() throws IOException {

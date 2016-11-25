@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
+import java.util.Date;
 
 /**
  * Created by EvgeniyShilov on 23.11.2016 at 11:51
@@ -32,11 +33,9 @@ public class Sender extends Transmitter {
                     try {
                         System.out.println("IP?");
                         String ip = user.readLine();
-                        System.out.println("port?");
-                        String portLine = user.readLine();
-                        if (portLine.equals("") || ip.equals("")) return;
+                        if (ip.equals("")) return;
                         InetAddress inetAddress = InetAddress.getByName(ip);
-                        Integer port = Integer.parseInt(portLine);
+                        Integer port = Constants.RECEIVER_PORT;
                         setRemote(inetAddress, port);
                     } catch (IOException | NumberFormatException ignored) {
                     }
@@ -70,7 +69,9 @@ public class Sender extends Transmitter {
             System.out.println("No file");
             return;
         }
+        Date startTime = new Date();
         EnumeratedPacket packet;
+        int retryCount = 0;
         while (true) {
             String fileParams = filename + " " + file.length();
             send(fileParams);
@@ -78,12 +79,21 @@ public class Sender extends Transmitter {
             try {
                 packet = receive(Constants.LOW_TIMEOUT);
                 break;
-            } catch (SocketTimeoutException ignored) {
+            } catch (SocketTimeoutException e) {
+                retryCount++;
+                if(retryCount == Constants.MAX_RETRY_COUNT) {
+                    System.out.println("No response from receiver");
+                    return;
+                }
             }
         }
         while (true) {
             if (packet.getNumber() == Constants.CODE_IMPORTANT_MESSAGE) {
                 System.out.println(">>> " + packet.getDataAsString());
+                double speed = (double)(((new Date()).getTime() - startTime.getTime()) * 1000) == 0
+                        ? Double.MAX_VALUE
+                        :(double) (file.length() * 8) / (double)(((new Date()).getTime() - startTime.getTime()) * 1000);
+                System.out.println("Speed: " + speed + " Mbps");
                 return;
             }
             long[] packetNumbers = packet.getDataAsLongArray();
@@ -102,13 +112,19 @@ public class Sender extends Transmitter {
                 System.out.println("<<< packet#" + packetNumber);
             }
             fileReader.close();
+            retryCount = 0;
             while (true) {
                 System.out.println("<<< Last packet was sent");
                 send(Constants.CODE_IMPORTANT_MESSAGE, "Last packet was sent");
                 try {
                     packet = receive(Constants.LOW_TIMEOUT);
                     break;
-                } catch (SocketTimeoutException ignored) {
+                } catch (SocketTimeoutException e) {
+                    retryCount++;
+                    if(retryCount == Constants.MAX_RETRY_COUNT) {
+                        System.out.println("No response from receiver");
+                        return;
+                    }
                 }
             }
         }

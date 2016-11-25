@@ -44,11 +44,9 @@ public class Receiver extends Transmitter {
                     try {
                         System.out.println("IP?");
                         String ip = user.readLine();
-                        System.out.println("port?");
-                        String portLine = user.readLine();
-                        if (portLine.equals("") || ip.equals("")) return;
+                        if (ip.equals("")) return;
                         InetAddress inetAddress = InetAddress.getByName(ip);
-                        Integer port = Integer.parseInt(portLine);
+                        Integer port = Constants.SENDER_PORT;
                         setRemote(inetAddress, port);
                     } catch (IOException | NumberFormatException ignored) {
                     }
@@ -109,7 +107,7 @@ public class Receiver extends Transmitter {
     }
 
     private void onPacket(EnumeratedPacket packet) throws IOException {
-        if (!packetIsUploaded(packet.getNumber())) packets.add(packet);
+        packets.add(packet);
     }
 
     private void sendMissingPacketsNumbers() throws IOException {
